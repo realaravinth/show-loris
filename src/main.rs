@@ -47,17 +47,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("Listening on: http://{}", addr);
 
     let mut listener = TcpListener::bind(addr).await?;
-    while let Ok((inbound, _)) = listener.accept().await {
-        let transfer = transfer(inbound, &secret_bytes).map(|r| {
-            if let Err(e) = r {
-                info!("Failed to transfer; error={}", e);
-            }
-        });
+    loop {
+        while let Ok((inbound, _)) = listener.accept().await {
+            let transfer = transfer(inbound, &secret_bytes).map(|r| {
+                if let Err(e) = r {
+                    info!("Failed to transfer; error={}", e);
+                }
+            });
 
-        tokio::spawn(transfer);
+            tokio::spawn(transfer);
+        }
     }
-
-    Ok(())
 }
 
 async fn transfer(mut inbound: TcpStream, secret: &[u8]) -> Result<(), Box<dyn Error>> {
