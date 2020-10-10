@@ -11,5 +11,5 @@ tokio = { version = "0.2", features = ["full"] }
 futures = "0.3.0"
 pretty_env_logger = "0.4.0"
 log = "0.4.11"
-
+lazy_static = "1.4.0"
 

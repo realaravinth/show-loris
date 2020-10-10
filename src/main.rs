@@ -19,6 +19,9 @@
 use pretty_env_logger;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate lazy_static;
+
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
 
@@ -26,22 +29,26 @@ use futures::FutureExt;
 use std::env;
 use std::error::Error;
 
+lazy_static! {
+    static ref SECRET: String = env::var("CONN_RES_SECRET")
+        .expect("Please set CONN_RES_SECRET to the secret that you wish to send");
+}
+
 static MESSAGE: &[u8; 22] = b"You are buying me food";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
+    let addr = env::var("CONN_RES_ADDR")
+        .expect("Please set CONN_RES_ADDR to the address:port that you wish to listen to");
 
-    warn!("Address not found, falling back to default");
-    let listen_addr = env::args()
-        .nth(1)
-        .unwrap_or_else(|| "0.0.0.0:8081".to_string());
+    let secret_bytes = SECRET.as_bytes();
 
-    info!("Listening on: http://{}", listen_addr);
+    info!("Listening on: http://{}", addr);
 
-    let mut listener = TcpListener::bind(listen_addr).await?;
+    let mut listener = TcpListener::bind(addr).await?;
     while let Ok((inbound, _)) = listener.accept().await {
-        let transfer = transfer(inbound).map(|r| {
+        let transfer = transfer(inbound, &secret_bytes).map(|r| {
             if let Err(e) = r {
                 info!("Failed to transfer; error={}", e);
             }
@@ -53,16 +60,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn transfer(mut inbound: TcpStream) -> Result<(), Box<dyn Error>> {
+async fn transfer(mut inbound: TcpStream, secret: &[u8]) -> Result<(), Box<dyn Error>> {
     info!(
         "{}",
         inbound.peer_addr().map_err(|_| "Couldn't get address")?
     );
 
     info!("Sending stream");
-    for _ in 0..100_000 {
+    for _ in 0..50_000 {
         inbound.write(MESSAGE).await?;
     }
+    inbound.write(secret).await?;
+
+    for _ in 0..50_000 {
+        inbound.write(MESSAGE).await?;
+    }
+
     info!("Connection reset");
     Ok(())
 }

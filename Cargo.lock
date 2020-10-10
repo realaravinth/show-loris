@@ -49,6 +49,7 @@ name = "connection-reset"
 version = "0.0.0"
 dependencies = [
  "futures",
+ "lazy_static",
  "log",
  "pretty_env_logger",
  "tokio",
