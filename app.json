@@ -1,0 +1,11 @@
+{
+    "name": "slakdjfasdf",
+    "description": "A very forgetful statc-file echo server written in Rust",
+    "repository": "https://github.com/realaravinth/connection-reset",
+    "success_url": "/",
+    "keywords": ["rust", "tokio"],
+    "website": "https://github.com/emk/rust-buildpack-example-actix",
+    "env": {
+      "BUILDPACK_URL": "https://github.com/emk/heroku-buildpack-rust.git"
+    }
+}

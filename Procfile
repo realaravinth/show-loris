@@ -1,1 +1,1 @@
-web: ./target/release/amnesia $PORT
+web: ./target/release/connection-reset $PORT
