@@ -39,14 +39,12 @@ static MESSAGE: &[u8; 22] = b"You are buying me food";
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
-    let addr = env::var("CONN_RES_ADDR")
-        .expect("Please set CONN_RES_ADDR to the address:port that you wish to listen to");
+    let addr = env::var("PORT").expect("Please set PORT to the port that you wish to listen to");
 
     let secret_bytes = SECRET.as_bytes();
 
-    info!("Listening on: http://{}", addr);
-
-    let mut listener = TcpListener::bind(addr).await?;
+    info!("Listening on: http://0.0.0.0:{}", addr);
+    let mut listener = TcpListener::bind(format!("0.0.0.0:{}", addr)).await?;
     loop {
         while let Ok((inbound, _)) = listener.accept().await {
             let transfer = transfer(inbound, &secret_bytes).map(|r| {
