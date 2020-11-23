@@ -1,7 +1,9 @@
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-# Connection reset
+[![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
+
+# Slowloris
 
 A simple TCP server that listens on port 8081 and sends a bunch of bytes
+A hackish [Slowloris](https://en.wikipedia.org/wiki/Slowloris_(computer_security)) DoS client
 
 ## Usage
 
@@ -11,14 +13,9 @@ A simple TCP server that listens on port 8081 and sends a bunch of bytes
 $ cargo build --release
 ```
 
-2. Please set the following environment variables:
+2. Configuration currently needs to be hard-coded, this will hopefully
+   be changed later.
 
-- `$CONN_RES_SECRET` 
-	Secret that you wish to send
-- `$CONN_RES_ADDR`
-	Address you wish to listen from in `ip_addr:port` format.
-- `RUST_LOG`(optional)
-	There are three log levels, `debug`, `info` and `warn`
 
 3. Run the program with:
 

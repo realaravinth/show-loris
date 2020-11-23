@@ -1,5 +1,5 @@
 [package]
-name = "slow-loris"
+name = "slowloris"
 version = "0.1"
 publish = false
 edition = "2018"
